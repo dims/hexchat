@@ -18,6 +18,13 @@ BUILT_SOURCES = resources.c
 
 CLEANFILES = $(BUILT_SOURCES)
 
+if OS_W32
+w32_res = hexchat_rc.o
+w32_res_ldflags = -Wl,hexchat_rc.o
+hexchat_rc.o : hexchat.rc hexchat.exe.manifest
+	$(WINDRES) -I $(srcdir) -I $(top_srcdir)/data/icons --input hexchat.rc --output $@ --output-format=coff
+endif
+
 if DO_PLUGIN
 plugingui_c = plugingui.c
 endif
@@ -31,6 +38,10 @@ hexchat_SOURCES = ascii.c banlist.c chanlist.c chanview.c custom-list.c \
 	maingui.c notifygui.c palette.c pixmaps.c plugin-tray.c $(plugingui_c) \
 	rawlog.c resources.c servlistgui.c setup.c $(iso_codes_c) \
 	sexy-spell-entry.c textgui.c urlgrab.c userlistgui.c xtext.c
+hexchat_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_builddir)/src/common
+hexchat_LDFLAGS = $(w32_res_ldflags)
+hexchat_DEPENDENCIES = $(w32_res)
 
-resources.c: ../../data/hexchat.gresource.xml $(shell $(GLIB_COMPILE_RESOURCES) --sourcedir=../../data --generate-dependencies ../../data/hexchat.gresource.xml)
-	$(AM_V_GEN) $(GLIB_COMPILE_RESOURCES) --target=$@ --sourcedir=../../data --generate-source $<
+resources.c: $(top_srcdir)/data/hexchat.gresource.xml $(shell $(GLIB_COMPILE_RESOURCES) --sourcedir=$(top_srcdir)/data --generate-dependencies $(top_srcdir)/data/hexchat.gresource.xml)
+	$(AM_V_GEN) $(GLIB_COMPILE_RESOURCES) --target=$@ --sourcedir=$(top_srcdir)/data --generate-source $<
+

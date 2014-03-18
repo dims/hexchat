@@ -17,10 +17,12 @@
  * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301, USA
  */
 
+#ifdef HAVE_CONFIG_H
+#include "../../config.h"
+#else
 #ifdef WIN32
 #include "../../config-win32.h"
-#else
-#include "../../config.h"
+#endif
 #endif
 
 #include <glib.h>

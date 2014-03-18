@@ -47,6 +47,7 @@ AH_VERBATIM([USE_LIBCANBERRA],[#undef USE_LIBCANBERRA])
 AH_VERBATIM([USE_IPV6],[#undef USE_IPV6])
 AH_VERBATIM([USE_OPENSSL],[#undef USE_OPENSSL])
 AH_VERBATIM([USE_PLUGIN],[#undef USE_PLUGIN])
+AH_VERBATIM([USE_GMODULE],[#undef USE_GMODULE])
 AH_VERBATIM([USE_SIGACTION],[#undef USE_SIGACTION])
 AH_VERBATIM([USING_FREEBSD],[#undef USING_FREEBSD])
 AH_VERBATIM([USING_LINUX],[#undef USING_LINUX])
@@ -328,18 +329,70 @@ dnl *********************************************************************
 dnl ** IPv6 *************************************************************
 dnl *********************************************************************
 
+AC_CHECK_HEADERS([sys/socket.h ws2tcpip.h])
+
 dnl purely for Solaris
 AC_CHECK_FUNC(select, ,
 	AC_CHECK_LIB(socket, select, ,
 		AC_CHECK_LIB(nsl, select, ,
 			AC_CHECK_LIB(inet, select, ,
 				AC_CHECK_LIB(cposix, select, ,
-					AC_CHECK_LIB(net, select, ,
-						AC_MSG_WARN(i can not find select.  you might need to help me)))))))
-AC_CHECK_LIB(socket, select)
+					AC_CHECK_LIB(net, select, , [
+						AC_MSG_CHECKING(for socket in -lws2_32)
+						save_LIBS="$LIBS"
+						LIBS="$LIBS -lws2_32"
+						AC_LINK_IFELSE([
+							AC_LANG_PROGRAM([[
+							#ifdef HAVE_SYS_SOCKET_H
+							#	include <sys/socket.h>
+							#endif
+							#ifdef HAVE_WS2TCPIP_H
+							#	include <ws2tcpip.h>
+							#endif
+							]], [[return socket(0, 0, 0);]])
+						], [AC_MSG_RESULT(yes)], [
+							LIBS="$save_LIBS"
+							AC_MSG_WARN([i can not find socket.  you might need to help me])
+						])
+					])
+				)
+			)
+		)
+	)
+)
+AC_CHECK_LIB(socket, select, , [
+	AC_MSG_CHECKING(for select in -lws2_32)
+	AC_LINK_IFELSE([
+		AC_LANG_PROGRAM([[
+		#ifdef HAVE_SYS_SOCKET_H
+		#	include <sys/socket.h>
+		#endif
+		#ifdef HAVE_WS2TCPIP_H
+		#	include <ws2tcpip.h>
+		#endif
+		]], [[fd_set r; struct timeval tv; return select(1, &r, NULL, NULL, &tv);]])
+	], [AC_MSG_RESULT(yes)], [
+		AC_MSG_WARN([i can not find select.  you might need to help me])
+	])
+])
 
 if test "$ipv6" = yes; then
-	AC_CHECK_FUNCS(getaddrinfo, have_getaddrinfo=yes)
+	AC_CHECK_FUNCS(getaddrinfo, have_getaddrinfo=yes, [
+		AC_MSG_CHECKING(for getaddrinfo in -lws2_32)
+		AC_LINK_IFELSE([
+			AC_LANG_PROGRAM([[
+			#ifdef HAVE_SYS_SOCKET_H
+			#	include <sys/socket.h>
+			#endif
+			#ifdef HAVE_WS2TCPIP_H
+			#	include <ws2tcpip.h>
+			#endif
+			]], [[return getaddrinfo(NULL, NULL, NULL, NULL);]])
+		], [
+			AC_MSG_RESULT(yes)
+			have_getaddrinfo=yes
+		])
+	])
 	AC_MSG_CHECKING(whether to enable IPv6 support)
 	if test "$have_getaddrinfo" = yes; then
 		AC_MSG_RESULT(yes)
@@ -426,15 +479,12 @@ dnl ** PLUGIN ***********************************************************
 dnl *********************************************************************
 
 if test "$plugin" = yes; then
-	AC_CHECK_FUNCS(dlopen, have_dl=yes)
-	if test "$have_dl" != yes; then
-		AC_CHECK_LIB(dl, dlopen, have_dl=yes)
-		if test "$have_dl" = yes; then
-			LIBS="$LIBS -ldl"
-		fi
-	fi
-	if test "$have_dl" = yes; then
+	AC_MSG_CHECKING(whether gmodule is supported)
+	gmodule_supported=`$PKG_CONFIG --variable=gmodule_supported gmodule-2.0`
+	AC_MSG_RESULT([$gmodule_supported])
+	if test "x$gmodule_supported" = xtrue; then
 		AC_DEFINE(USE_PLUGIN)
+		AC_DEFINE(USE_GMODULE)
 		dnl we just need the -Wl,--export-dynamic, but not -lgmodule-2.0
 		RDYNAMIC_FLAGS="`$PKG_CONFIG gmodule-2.0 --libs | $sedpath 's/ -lgmodule-2.0//'`"
 		LIBS="$LIBS $RDYNAMIC_FLAGS"
@@ -597,6 +647,18 @@ dnl *********************************************************************
 dnl ** CONDITIONALS *****************************************************
 dnl *********************************************************************
 
+os_w32=no
+case $host_os in
+  mingw*) os_w32=yes;;
+  *);;
+esac
+if test "x$os_w32" = "xyes"; then
+  AC_CHECK_TOOL(WINDRES, windres, no)
+  if test "$WINDRES" = no; then
+    AC_MSG_ERROR([*** Could not find an implementation of windres in your PATH.])
+  fi
+fi
+
 AM_CONDITIONAL(USE_OPENSSL, test "x$openssl" = "xyes")
 AM_CONDITIONAL(USE_LIBNOTIFY, test "x$libnotify" = "xyes")
 AM_CONDITIONAL(USE_LIBCANBERRA, test "x$libcanberra" = "xyes")
@@ -613,6 +675,7 @@ AM_CONDITIONAL(DO_SYSINFO, test "x$sysinfo" = "xyes")
 AM_CONDITIONAL(USE_DBUS, test "x$dbus" = "xyes")
 AM_CONDITIONAL(HAVE_ISO_CODES, test "x$isocodes" = "xyes")
 AM_CONDITIONAL(WITH_TM, test "x$theme_manager" != "xno")
+AM_CONDITIONAL(OS_W32, test "x$os_w32" = "xyes")
 
 dnl *********************************************************************
 dnl ** SOCKS5 ***********************************************************
@@ -766,7 +829,12 @@ AC_CHECK_HEADERS(strings.h)
 dnl Check for type in sys/socket.h - from Squid source (GPL)
 AC_CACHE_CHECK(for socklen_t, ac_cv_type_socklen_t, [
 AC_EGREP_CPP([socklen_t[^a-zA-Z_0-9]], [#include <sys/types.h>
+#if HAVE_SYS_SOCKET_H
 #include <sys/socket.h>
+#endif
+#if HAVE_WS2TCPIP_H
+#include <ws2tcpip.h>
+#endif
 #if STDC_HEADERS
 #include <stdlib.h>
 #include <stddef.h>
@@ -823,6 +891,9 @@ dnl for plugins/xxx/Makefile.am
 hexchatlibdir=${libdir}/hexchat/plugins
 AC_SUBST(hexchatlibdir)
 
+VERSION_COMMAS=`echo $VERSION | $sedpath -e 's/\./,/g'`
+AC_SUBST(VERSION_COMMAS)
+
 AC_CONFIG_FILES([
 Makefile
 data/Makefile
@@ -846,7 +917,12 @@ plugins/checksum/Makefile
 plugins/doat/Makefile
 plugins/fishlim/Makefile
 plugins/sysinfo/Makefile
+plugins/exec/Makefile
+plugins/mpcinfo/Makefile
+plugins/upd/Makefile
+plugins/winamp/Makefile
 po/Makefile.in
+src/fe-gtk/hexchat.rc
 ])
 
 AC_OUTPUT

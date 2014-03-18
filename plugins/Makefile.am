@@ -22,4 +22,4 @@ if DO_SYSINFO
 sysinfodir = sysinfo
 endif
 
-SUBDIRS = $(pythondir) $(perldir) $(checksumdir) $(doatdir) $(fishlimdir) $(sysinfodir)
+SUBDIRS = $(pythondir) $(perldir) $(checksumdir) $(doatdir) $(fishlimdir) $(sysinfodir) exec mpcinfo upd winamp

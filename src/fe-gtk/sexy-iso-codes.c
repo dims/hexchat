@@ -23,10 +23,12 @@
 #include <libintl.h>
 #include <string.h>
 
-#ifdef G_OS_WIN32
-#include "../../config-win32.h"
-#else
+#ifdef HAVE_CONFIG_H
 #include "../../config.h"
+#else
+#ifdef WIN32
+#include "../../config-win32.h"
+#endif
 #endif
 
 #define ISO_639_DOMAIN	"iso_639"

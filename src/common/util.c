@@ -34,14 +34,12 @@
 #include <process.h>
 #include <io.h>
 #include "../dirent/dirent-win32.h"
-#include "../../config-win32.h"
 #else
 #include <unistd.h>
 #include <pwd.h>
 #include <sys/time.h>
 #include <sys/utsname.h>
 #include <dirent.h>
-#include "../../config.h"
 #endif
 
 #include <fcntl.h>
@@ -653,7 +651,8 @@ static int
 get_mhz (void)
 {
 	HKEY hKey;
-	int result, data, dataSize;
+	int result, data;
+	DWORD dataSize;
 
 	if (RegOpenKeyEx (HKEY_LOCAL_MACHINE, "Hardware\\Description\\System\\"
 		"CentralProcessor\\0", 0, KEY_QUERY_VALUE, &hKey) == ERROR_SUCCESS)

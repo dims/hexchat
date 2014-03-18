@@ -22,6 +22,14 @@
 #ifndef HEXCHAT_INET_H
 #define HEXCHAT_INET_H
 
+#ifdef HAVE_CONFIG_H
+#include "../../config.h"
+#else
+#ifdef WIN32
+#include "../../config-win32.h"
+#endif
+#endif
+
 #ifndef WIN32
 
 #ifdef WANTSOCKET
@@ -34,10 +42,6 @@
 #endif
 #ifdef WANTDNS
 #include <netdb.h>
-/* OpenBSD's netdb.h does not define AI_ADDRCONFIG */
-#ifndef AI_ADDRCONFIG
-#define AI_ADDRCONFIG 0
-#endif
 #endif
 #define closesocket close
 #define set_blocking(sok) fcntl(sok, F_SETFL, 0)
@@ -47,7 +51,6 @@
 
 #else
 
-#include "../../config-win32.h"
 #ifdef USE_IPV6
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -66,6 +69,11 @@
 #define would_block() (WSAGetLastError() == WSAEWOULDBLOCK)
 #define sock_error WSAGetLastError
 
+#endif
+
+/* OpenBSD's netdb.h does not define AI_ADDRCONFIG */
+#ifndef AI_ADDRCONFIG
+#define AI_ADDRCONFIG 0
 #endif
 
 #endif

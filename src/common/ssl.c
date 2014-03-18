@@ -27,9 +27,6 @@
 #include <openssl/err.h>		  /* ERR_() */
 #ifdef WIN32
 #include <openssl/rand.h>		  /* RAND_seed() */
-#include "../../config-win32.h"	  /* HAVE_SNPRINTF */
-#else
-#include "../../config.h"
 #endif
 #include <time.h>				  /* asctime() */
 #include <string.h>				  /* strncpy() */

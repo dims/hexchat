@@ -56,11 +56,18 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
+#ifdef HAVE_CONFIG_H
+#include "../../config.h"
+#else
+#ifdef WIN32
+#include "../../config-win32.h"
+#endif
+#endif
+
 #ifdef WIN32
 #include <direct.h>
 #include <glib/gstdio.h>
 #include "../../src/dirent/dirent-win32.h"
-#include "../../config-win32.h"
 #else
 #include <unistd.h>
 #include <dirent.h>

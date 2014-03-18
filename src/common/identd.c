@@ -29,6 +29,19 @@ static int identd_is_running = FALSE;
 static int identd_ipv6_is_running = FALSE;
 #endif
 
+static const char* w32_inet_ntop(int af, const void* src, char* dst, int cnt)
+{
+	struct sockaddr_in srcaddr;
+
+	memset (&srcaddr, 0, sizeof(struct sockaddr_in));
+	memcpy (&(srcaddr.sin_addr), src, sizeof(srcaddr.sin_addr));
+
+	srcaddr.sin_family = af;
+	if (WSAAddressToString ((struct sockaddr*) &srcaddr, sizeof(struct sockaddr_in), 0, dst, (LPDWORD) &cnt) != 0)
+		return NULL;
+	return dst;
+}
+
 static int
 identd (char *username)
 {
@@ -81,7 +94,7 @@ identd (char *username)
 #if 0	/* causes random crashes, probably due to CreateThread */
 	EMIT_SIGNAL (XP_TE_IDENTD, current_sess, inet_ntoa (addr.sin_addr), username, NULL, NULL, 0);
 #endif
-	inet_ntop (AF_INET, &addr.sin_addr, ipbuf, sizeof (ipbuf));
+	w32_inet_ntop (AF_INET, &addr.sin_addr, ipbuf, sizeof (ipbuf));
 	snprintf (outbuf, sizeof (outbuf), "*\tServicing ident request from %s as %s\n", ipbuf, username);
 	PrintText (current_sess, outbuf);
 
@@ -154,7 +167,7 @@ identd_ipv6 (char *username)
 
 	identd_ipv6_is_running = FALSE;
 
-	inet_ntop (AF_INET6, &addr.sin6_addr, ipbuf, sizeof (ipbuf));
+	w32_inet_ntop (AF_INET6, &addr.sin6_addr, ipbuf, sizeof (ipbuf));
 	snprintf (outbuf, sizeof (outbuf), "*\tServicing ident request from %s as %s\n", ipbuf, username);
 	PrintText (current_sess, outbuf);
 

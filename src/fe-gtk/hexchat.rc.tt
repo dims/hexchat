@@ -1,5 +1,11 @@
 #include <winver.h>
+#ifdef HAVE_CONFIG_H
+#include "../../config.h"
+#else
+#ifdef WIN32
 #include "../../config-win32.h"
+#endif
+#endif
 
 #define COMMA_VERSION <#= [string]::Join(',', $versionParts) #>,0
 

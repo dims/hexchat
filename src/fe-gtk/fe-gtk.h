@@ -20,10 +20,12 @@
 #ifndef HEXCHAT_FE_GTK_H
 #define HEXCHAT_FE_GTK_H
 
+#ifdef HAVE_CONFIG_H
+#include "../../config.h"
+#else
 #ifdef WIN32
 #include "../../config-win32.h"
-#else
-#include "../../config.h"
+#endif
 #endif
 
 #define DISPLAY_NAME "HexChat"

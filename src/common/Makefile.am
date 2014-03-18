@@ -48,6 +48,10 @@ if USE_MSPROXY
 msproxy_c = msproxy.c
 endif
 
+if OS_W32
+identd_c = identd.c
+endif
+
 if USE_DBUS
 dbusdir = dbus
 libhexchatcommon_a_LIBADD =				\
@@ -62,21 +66,21 @@ endif
 noinst_PROGRAMS = make-te
 
 libhexchatcommon_a_SOURCES = cfgfiles.c chanopt.c ctcp.c dcc.c hexchat.c \
-	history.c ignore.c inbound.c marshal.c modes.c $(msproxy_c) network.c notify.c \
+	history.c ignore.c $(identd_c) inbound.c marshal.c modes.c $(msproxy_c) network.c notify.c \
 	outbound.c plugin.c plugin-timer.c proto-irc.c server.c servlist.c \
 	$(ssl_c) text.c tree.c url.c userlist.c util.c
 libhexchatcommon_a_CFLAGS = $(LIBPROXY_CFLAGS)
 
 textenums.h: textevents.h
 
-textevents.h: textevents.in make-te
-	$(AM_V_GEN) ./make-te < textevents.in > textevents.h 2> textenums.h
+textevents.h: $(srcdir)/textevents.in make-te
+	$(AM_V_GEN) ./make-te < $< > $@ 2> textenums.h
 
-marshal.h: marshalers.list
-	$(AM_V_GEN) $(GLIB_GENMARSHAL) --prefix=_hexchat_marshal --header $(srcdir)/marshalers.list > $@
+marshal.h: $(srcdir)/marshalers.list
+	$(AM_V_GEN) $(GLIB_GENMARSHAL) --prefix=_hexchat_marshal --header $< > $@
 
-marshal.c: marshalers.list
-	$(AM_V_GEN) $(GLIB_GENMARSHAL) --prefix=_hexchat_marshal --body $(srcdir)/marshalers.list > $@
+marshal.c: $(srcdir)/marshalers.list
+	$(AM_V_GEN) $(GLIB_GENMARSHAL) --prefix=_hexchat_marshal --body $< > $@
 
 
 BUILT_SOURCES = textenums.h textevents.h marshal.c marshal.h

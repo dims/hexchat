@@ -32,10 +32,12 @@
 #endif
 
 #undef PACKAGE
+#ifdef HAVE_CONFIG_H
+#include "../../config.h"
+#else
 #ifdef WIN32
 #include "../../config-win32.h"		  /* for #define OLD_PERL */
-#else
-#include "../../config.h"
+#endif
 #endif
 #include "hexchat-plugin.h"
 

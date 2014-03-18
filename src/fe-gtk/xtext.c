@@ -31,10 +31,12 @@
 #include <stdlib.h>
 #include <time.h>
 
+#ifdef HAVE_CONFIG_H
+#include "../../config.h"
+#else
 #ifdef WIN32
 #include "../../config-win32.h"
-#else
-#include "../../config.h"
+#endif
 #endif
 
 #include "../common/hexchat.h"

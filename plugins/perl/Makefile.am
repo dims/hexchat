@@ -6,7 +6,7 @@ libdir = $(hexchatlibdir)
 
 lib_LTLIBRARIES = perl.la
 perl_la_SOURCES = perl.c
-perl_la_LDFLAGS = -avoid-version -module 
+perl_la_LDFLAGS = -avoid-version -module -no-undefined
 perl_la_LIBADD = $(PERL_LDFLAGS)
 BUILT_SOURCES = hexchat.pm.h irc.pm.h
 #CFLAGS = @CFLAGS@ -Wno-unused
