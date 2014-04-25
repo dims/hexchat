@@ -1299,110 +1299,6 @@ country_search (char *pattern, void *ud, void (*print)(void *, char *, ...))
 	}
 }
 
-/* I think gnome1.0.x isn't necessarily linked against popt, ah well! */
-/* !!! For now use this inlined function, or it would break fe-text building */
-/* .... will find a better solution later. */
-/*#ifndef USE_GNOME*/
-
-/* this is taken from gnome-libs 1.2.4 */
-#define POPT_ARGV_ARRAY_GROW_DELTA 5
-
-int my_poptParseArgvString(const char * s, int * argcPtr, char *** argvPtr) {
-    char * buf, * bufStart, * dst;
-    const char * src;
-    char quote = '\0';
-    int argvAlloced = POPT_ARGV_ARRAY_GROW_DELTA;
-    char ** argv = malloc(sizeof(*argv) * argvAlloced);
-    const char ** argv2;
-    int argc = 0;
-    int i, buflen;
-
-    buflen = strlen(s) + 1;
-/*    bufStart = buf = alloca(buflen);*/
-	 bufStart = buf = malloc (buflen);
-    memset(buf, '\0', buflen);
-
-    src = s;
-    argv[argc] = buf;
-
-    while (*src) {
-	if (quote == *src) {
-	    quote = '\0';
-	} else if (quote) {
-	    if (*src == '\\') {
-		src++;
-		if (!*src) {
-		    free(argv);
-			 free(bufStart);
-		    return 1;
-		}
-		if (*src != quote) *buf++ = '\\';
-	    }
-	    *buf++ = *src;
-	/*} else if (isspace((unsigned char) *src)) {*/
-	} else if (*src == ' ') {
-	    if (*argv[argc]) {
-		buf++, argc++;
-		if (argc == argvAlloced) {
-		    char **temp;
-		    argvAlloced += POPT_ARGV_ARRAY_GROW_DELTA;
-		    temp = realloc(argv, sizeof(*argv) * argvAlloced);
-		    if (temp)
-			argv = temp;
-		    else
-		    {
-			free(argv);
-			free(bufStart);
-			return 1;
-		    }
-		}
-		argv[argc] = buf;
-	    }
-	} else switch (*src) {
-	  case '"':
-	  case '\'':
-	    quote = *src;
-	    break;
-	  case '\\':
-	    src++;
-	    if (!*src) {
-		free(argv);
-		free(bufStart);
-		return 1;
-	    }
-	    /* fallthrough */
-	  default:
-	    *buf++ = *src;
-	}
-
-	src++;
-    }
-
-    if (strlen(argv[argc])) {
-	argc++, buf++;
-    }
-
-    dst = malloc((argc + 1) * sizeof(*argv) + (buf - bufStart));
-    argv2 = (void *) dst;
-    dst += (argc + 1) * sizeof(*argv);
-    memcpy((void *)argv2, argv, argc * sizeof(*argv));
-    argv2[argc] = NULL;
-    memcpy(dst, bufStart, buf - bufStart);
-
-    for (i = 0; i < argc; i++) {
-	argv2[i] = dst + (argv[i] - bufStart);
-    }
-
-    free(argv);
-
-    *argvPtr = (char **)argv2;	/* XXX don't change the API */
-    *argcPtr = argc;
-
-	 free (bufStart);
-
-    return 0;
-}
-
 int
 util_exec (const char *cmd)
 {
@@ -1413,14 +1309,14 @@ util_exec (const char *cmd)
 	int fd;
 #endif
 
-	if (my_poptParseArgvString (cmd, &argc, &argv) != 0)
+	if (!g_shell_parse_argv (cmd, &argc, &argv, NULL))
 		return -1;
 
 #ifndef WIN32
 	pid = fork ();
 	if (pid == -1)
 	{
-		free (argv);
+		g_strfreev (argv);
 		return -1;
 	}
 	if (pid == 0)
@@ -1431,12 +1327,12 @@ util_exec (const char *cmd)
 		_exit (0);
 	} else
 	{
-		free (argv);
+		g_strfreev (argv);
 		return pid;
 	}
 #else
-	spawnvp (_P_DETACH, argv[0], argv);
-	free (argv);
+	spawnvp (_P_DETACH, argv[0], argv + 1);
+	g_strfreev (argv);
 	return 0;
 #endif
 }

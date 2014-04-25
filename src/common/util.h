@@ -37,7 +37,6 @@
 
 extern const unsigned char rfc_tolowertab[];
 
-int my_poptParseArgvString(const char * s, int * argcPtr, char *** argvPtr);
 char *expand_homedir (char *file);
 void path_part (char *file, char *path, int pathlen);
 int match (const char *mask, const char *string);
